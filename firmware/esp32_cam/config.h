@@ -7,14 +7,11 @@
 // ============================================================================
 
 // --- Wi-Fi Settings ---
-// Set to your mobile hotspot or Wi-Fi router credentials
-const char* const WIFI_SSID     = "Your_WiFi_Or_Hotspot_Name";
-const char* const WIFI_PASSWORD = "Your_WiFi_Password";
+const char* const WIFI_SSID     = "vivo Y21 5G";
+const char* const WIFI_PASSWORD = "jebinson(raj)";
 
 // --- Server Settings ---
-// IP address of the laptop running the TRAZEN Flask server
-// (Run 'ipconfig' in Windows PowerShell to find your IPv4 Address, e.g. 192.168.43.50)
-const char* const SERVER_HOST   = "192.168.43.100";
+const char* const SERVER_HOST   = "10.69.238.166";
 const int         SERVER_PORT   = 5000;
 
 // API Endpoints

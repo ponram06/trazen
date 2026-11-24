@@ -96,9 +96,9 @@ def ingest_frame(event_id=None):
         return jsonify({"status": "error", "message": "Empty payload"}), 400
 
     # Extract headers transmitted by ESP32-CAM
-    device_id = request.headers.get("X-Device-Id", DEFAULT_DEVICE_ID)
+    device_id = request.headers.get("X-Device-Id", request.headers.get("X-Device-ID", DEFAULT_DEVICE_ID))
     frame_id = request.headers.get("X-Frame-Id", "0")
-    signature = request.headers.get("X-Signature-SHA256", "")
+    signature = request.headers.get("X-Signature", request.headers.get("X-Signature-SHA256", ""))
     lat = float(request.headers.get("X-GPS-Latitude", 13.0604))
     lon = float(request.headers.get("X-GPS-Longitude", 80.2496))
     speed = float(request.headers.get("X-GPS-Speed", 0.0))

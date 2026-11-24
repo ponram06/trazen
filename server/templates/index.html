@@ -3,146 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TRAZEN - Smart Traffic Violation Detection System</title>
+    <title>TRAZEN - Smart Traffic Violation Monitor</title>
     <link rel="stylesheet" href="/static/css/dashboard.css">
-    <!-- Leaflet.js CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        .simple-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: #111827;
+            border-bottom: 1px solid #1f2937;
+        }
+        .main-stage {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 20px;
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        @media (max-width: 900px) {
+            .main-stage { grid-template-columns: 1fr; }
+        }
+        .camera-card {
+            background: #1f2937;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #374151;
+        }
+        .camera-screen {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .camera-screen img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .hud-banner {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(4px);
+            padding: 8px 14px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #38bdf8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .panel-box {
+            background: #1f2937;
+            border-radius: 12px;
+            padding: 18px;
+            border: 1px solid #374151;
+        }
+        .quick-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .metric-mini {
+            background: #111827;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #374151;
+            text-align: center;
+        }
+        .metric-mini span {
+            display: block;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+        }
+        .metric-mini strong {
+            font-size: 1.4rem;
+            color: #f9fafb;
+        }
+        #map {
+            height: 260px;
+            border-radius: 8px;
+        }
+    </style>
 </head>
-<body>
+<body style="background: #0b0f19; color: #f3f4f6; margin: 0; font-family: sans-serif;">
 
-    <!-- Top Navigation Bar -->
-    <nav class="navbar">
-        <div class="brand-title">
-            <span>🚦 TRAZEN</span>
-            <span class="brand-badge">SMART ITS</span>
+    <!-- Clean Header -->
+    <header class="simple-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 1.4rem; font-weight: 800; color: #fff;">🚦 TRAZEN</span>
+            <span style="background: #2563eb; color: #fff; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; font-weight: bold;">LIVE SYSTEM</span>
         </div>
-        <div class="nav-links">
-            <a href="/" class="nav-link active">Live Operations</a>
-            <a href="/violations" class="nav-link">Violations Audit</a>
-            <div class="status-pill">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div class="status-pill" style="display: flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: 1px solid rgba(16, 185, 129, 0.3);">
                 <div class="pulse-dot"></div>
-                <span id="systemStatus">NODE-01 ONLINE</span>
+                <span id="nodeStatus">ESP32-CAM ONLINE (10.69.238.104)</span>
             </div>
+            <a href="/violations" class="btn btn-outline" style="color: #9ca3af; text-decoration: none; font-size: 0.85rem; border: 1px solid #374151; padding: 6px 12px; border-radius: 6px;">Audit Log</a>
         </div>
-    </nav>
+    </header>
 
-    <!-- Main Content Container -->
-    <div class="container">
-
-        <!-- Metrics Row -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <span class="stat-title">Frames Processed</span>
-                <span class="stat-value" id="statTotalFrames">{{ stats.total_frames }}</span>
+    <!-- Main Workspace -->
+    <div class="main-stage">
+        
+        <!-- Left: Big Camera Feed -->
+        <div class="camera-card">
+            <div style="padding: 12px 18px; border-bottom: 1px solid #374151; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: bold; font-size: 1rem;">📷 Road Monitoring Camera (OV2640)</span>
+                <span style="font-size: 0.75rem; background: #059669; color: #fff; padding: 2px 8px; border-radius: 4px;">LIVE STREAM</span>
             </div>
-            <div class="stat-card">
-                <span class="stat-title">Total Violations</span>
-                <span class="stat-value" style="color: var(--accent-rose);" id="statTotalViolations">{{ stats.total_violations }}</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-title">Pending Audit</span>
-                <span class="stat-value" style="color: var(--accent-amber);" id="statPendingReview">{{ stats.pending_review }}</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-title">Active Edge Nodes</span>
-                <span class="stat-value" style="color: var(--accent-emerald);" id="statActiveNodes">{{ stats.active_devices }}</span>
+            <div class="camera-screen">
+                <img id="liveStreamImg" src="/static/uploads/frames/{{ latest_frame.filename }}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'640\' height=\'480\'><rect width=\'100%\' height=\'100%\' fill=\'%23111827\'/><text x=\'50%\' y=\'50%\' fill=\'%239ca3af\' font-size=\'20\' text-anchor=\'middle\'>Waiting for next frame from ESP32-CAM...</text></svg>'" alt="Live Stream">
+                <div class="hud-banner">
+                    <span id="hudInfo">SYNC: {{ latest_frame.timestamp or "LIVE" }} &bull; LAT {{ "%.4f"|format(telemetry.latitude) }} &bull; LON {{ "%.4f"|format(telemetry.longitude) }}</span>
+                    <strong id="hudSpeed" style="color: #f43f5e;">{{ "%.1f"|format(telemetry.speed_kmh) }} KM/H</strong>
+                </div>
             </div>
         </div>
 
-        <!-- Two Column Operational Layout -->
-        <div class="dashboard-grid">
+        <!-- Right: Real-time Telemetry & Violations -->
+        <div class="side-panel">
             
-            <!-- Left Column: Video Feed & GPS Map -->
-            <div>
-                <!-- Live Video Feed Box -->
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">📹 Vehicular Edge Camera Stream (ESP32-CAM)</span>
-                        <span class="badge badge-emerald">640x480 VGA</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="live-stream-box">
-                            {% if latest_frame.filename %}
-                                <img id="liveStreamImg" class="live-stream-img" src="/static/uploads/frames/{{ latest_frame.filename }}" alt="Live Feed">
-                            {% else %}
-                                <div style="color: var(--text-muted); text-align: center; padding: 40px;">
-                                    <p style="font-size: 2rem;">📡</p>
-                                    <p>Awaiting incoming frame from ESP32-CAM or Simulator...</p>
-                                </div>
-                            {% endif %}
-                            <div class="stream-overlay-hud" id="hudInfo">
-                                REC {{ latest_frame.timestamp or "00:00:00" }} | LAT {{ "%.4f"|format(telemetry.latitude) }} LON {{ "%.4f"|format(telemetry.longitude) }}
-                            </div>
-                            <div class="stream-overlay-speed" id="hudSpeed">
-                                {{ "%.1f"|format(telemetry.speed_kmh) }} KM/H
-                            </div>
-                        </div>
-                    </div>
+            <!-- Quick Counters -->
+            <div class="quick-metrics">
+                <div class="metric-mini">
+                    <span>Frames Received</span>
+                    <strong id="statTotalFrames">{{ stats.total_frames }}</strong>
                 </div>
-
-                <!-- GPS Navigation Map -->
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">🗺️ Real-Time Telemetry & Route Tracker (NEO-6M GPS)</span>
-                        <span class="badge badge-emerald">GPS LOCKED</span>
-                    </div>
-                    <div class="card-body">
-                        <div id="map"></div>
-                    </div>
+                <div class="metric-mini">
+                    <span>Active Infractions</span>
+                    <strong id="statTotalViolations" style="color: #f43f5e;">{{ stats.total_violations }}</strong>
                 </div>
             </div>
 
-            <!-- Right Column: Violations Feed -->
-            <div>
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">⚠️ Real-Time Infraction Detections</span>
-                        <a href="/violations" class="btn btn-outline" style="font-size: 0.75rem; padding: 4px 8px;">View All</a>
-                    </div>
-                    <div class="card-body">
-                        <div class="violation-list" id="violationFeed">
-                            {% for v in violations %}
-                            <div class="violation-card">
-                                <img src="/static/{{ v.evidence_image }}" class="violation-thumb" alt="Evidence">
-                                <div class="violation-content">
-                                    <div>
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <span class="badge badge-rose">{{ v.violation_type }}</span>
-                                            <small style="color: var(--text-muted); font-size: 0.75rem;">{{ v.timestamp }}</small>
-                                        </div>
-                                        <div style="font-size: 0.85rem; color: #e2e8f0;">
-                                            {{ v.remarks or "Automatic infraction detected by AI Heuristics." }}
-                                        </div>
-                                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
-                                            Speed: <strong>{{ v.speed_kmh }} km/h</strong> | Limit: {{ v.speed_limit_kmh }} km/h
-                                        </div>
-                                    </div>
-                                    <div style="margin-top: 8px;">
-                                        <a href="/challan/{{ v.violation_id }}" target="_blank" class="btn btn-primary" style="font-size: 0.75rem; padding: 3px 10px;">
-                                            Generate E-Challan →
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                            {% else %}
-                            <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
-                                <p style="font-size: 1.8rem;">🛡️</p>
-                                <p>No violations logged yet. System is actively monitoring.</p>
-                            </div>
-                            {% endfor %}
+            <!-- Live GPS Map -->
+            <div class="panel-box">
+                <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                    <span>📍 GPS Live Vehicle Tracker</span>
+                    <small style="color: #34d399;">NEO-6M Active</small>
+                </div>
+                <div id="map"></div>
+            </div>
+
+            <!-- Violation Alerts List -->
+            <div class="panel-box">
+                <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                    <span>⚠️ Detected Infractions</span>
+                </div>
+                <div id="violationFeed" style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto;">
+                    {% for v in violations %}
+                    <div style="background: #111827; padding: 10px; border-radius: 8px; border: 1px solid #374151; display: flex; gap: 10px; align-items: center;">
+                        <img src="/static/{{ v.evidence_image }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                        <div style="flex-grow: 1;">
+                            <span style="background: rgba(244, 63, 94, 0.2); color: #fb7185; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold;">{{ v.violation_type }}</span>
+                            <div style="font-size: 0.8rem; color: #e5e7eb; margin-top: 2px;">{{ v.remarks }}</div>
+                            <small style="color: #9ca3af; font-size: 0.7rem;">Speed: {{ v.speed_kmh }} km/h &bull; {{ v.timestamp }}</small>
                         </div>
+                        <a href="/challan/{{ v.violation_id }}" target="_blank" style="background: #2563eb; color: #fff; text-decoration: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">E-Challan</a>
                     </div>
+                    {% else %}
+                    <div style="text-align: center; color: #9ca3af; padding: 20px 0; font-size: 0.85rem;">
+                        🛡️ System active. No traffic violations recorded yet.
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
 
         </div>
 
     </div>
-
-    <!-- Footer -->
-    <footer>
-        TRAZEN: Smart Traffic Violation Detection System &bull; Loyola ICAM College of Engineering and Technology (LICET) &bull; 2026-2027
-    </footer>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
