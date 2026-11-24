@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRAZEN - Violations Audit Log</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <div class="brand-title">
+            <span>🚦 TRAZEN</span>
+            <span class="brand-badge">AUDIT PORTAL</span>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Live Operations</a>
+            <a href="/violations" class="nav-link active">Violations Audit</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Enforcement Violation Records</h2>
+            <div style="display: flex; gap: 10px;">
+                <a href="/violations" class="btn btn-outline">Show All</a>
+                <a href="/violations?type=OVERSPEEDING" class="btn btn-outline">Overspeeding</a>
+                <a href="/violations?type=RED_LIGHT_JUMP" class="btn btn-outline">Red Light</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body" style="padding: 0;">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Evidence</th>
+                                <th>Violation ID</th>
+                                <th>Timestamp</th>
+                                <th>Infraction Type</th>
+                                <th>Recorded Speed</th>
+                                <th>GPS Location</th>
+                                <th>SHA-256 Integrity</th>
+                                <th>Audit Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in violations %}
+                            <tr id="row-{{ v.violation_id }}">
+                                <td>
+                                    <img src="/static/{{ v.evidence_image }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" alt="Evidence">
+                                </td>
+                                <td><code style="color: #38bdf8;">{{ v.violation_id }}</code></td>
+                                <td>{{ v.timestamp }}</td>
+                                <td><span class="badge badge-rose">{{ v.violation_type }}</span></td>
+                                <td><strong>{{ v.speed_kmh }}</strong> / {{ v.speed_limit_kmh }} km/h</td>
+                                <td><small>{{ "%.4f"|format(v.latitude) }}, {{ "%.4f"|format(v.longitude) }}</small></td>
+                                <td>
+                                    <span class="badge badge-emerald" title="{{ v.evidence_hash_sha256 }}">
+                                        ✓ {{ v.evidence_hash_sha256[:8] }}...
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if v.status == 'APPROVED' %}badge-emerald{% elif v.status == 'DISMISSED' %}badge-rose{% else %}badge-amber{% endif %}" id="status-{{ v.violation_id }}">
+                                        {{ v.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 6px;">
+                                        <a href="/challan/{{ v.violation_id }}" target="_blank" class="btn btn-primary" style="font-size: 0.75rem; padding: 4px 8px;">
+                                            Challan
+                                        </a>
+                                        <button onclick="updateStatus('{{ v.violation_id }}', 'APPROVED')" class="btn btn-outline" style="font-size: 0.75rem; padding: 4px 8px; color: #34d399;">
+                                            ✓
+                                        </button>
+                                        <button onclick="updateStatus('{{ v.violation_id }}', 'DISMISSED')" class="btn btn-outline" style="font-size: 0.75rem; padding: 4px 8px; color: #fb7185;">
+                                            ✕
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                                    No records found matching criteria.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        async function updateStatus(violationId, newStatus) {
+            try {
+                const res = await fetch(`/api/v1/violations/${violationId}/review`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (res.ok) {
+                    const badge = document.getElementById(`status-${violationId}`);
+                    badge.textContent = newStatus;
+                    badge.className = `badge ${newStatus === 'APPROVED' ? 'badge-emerald' : 'badge-rose'}`;
+                }
+            } catch(e) {
+                alert('Failed to update status');
+            }
+        }
+    </script>
+</body>
+</html>

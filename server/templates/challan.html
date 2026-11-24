@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Challan - {{ violation.violation_id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            padding: 30px;
+            margin: 0;
+        }
+        .challan-card {
+            max-width: 780px;
+            margin: 0 auto;
+            background: #fff;
+            border: 2px solid #0f172a;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0 0 5px 0;
+            font-size: 20px;
+            letter-spacing: 1px;
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 14px;
+            color: #475569;
+            font-weight: normal;
+        }
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .meta-item {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 4px;
+        }
+        .meta-label {
+            font-weight: bold;
+            color: #475569;
+        }
+        .evidence-box {
+            text-align: center;
+            margin: 20px 0;
+            border: 1px solid #cbd5e1;
+            padding: 10px;
+            background: #000;
+        }
+        .evidence-img {
+            max-width: 100%;
+            height: auto;
+            max-height: 380px;
+            display: block;
+            margin: 0 auto;
+        }
+        .hash-box {
+            background: #f1f5f9;
+            border-left: 4px solid #059669;
+            padding: 10px 14px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-bottom: 20px;
+            word-break: break-all;
+        }
+        .btn-print {
+            background: #2563eb;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            display: block;
+            margin: 20px auto 0 auto;
+        }
+        @media print {
+            body { background: #fff; padding: 0; }
+            .challan-card { border: none; box-shadow: none; padding: 0; }
+            .btn-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="challan-card">
+        <div class="header">
+            <h1>AUTOMATED TRAFFIC ENFORCEMENT CITATION</h1>
+            <h2>TRAZEN INTELLIGENT VEHICULAR MONITORING SYSTEM &bull; LICET RESEARCH LAB</h2>
+        </div>
+
+        <div class="meta-grid">
+            <div class="meta-item">
+                <span class="meta-label">Citation Number:</span>
+                <span><strong>{{ violation.violation_id }}</strong></span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Date & Time:</span>
+                <span>{{ violation.timestamp }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Monitoring Node:</span>
+                <span>{{ violation.device_id }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Target Registration:</span>
+                <span>TN-01-AB-2026</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Infraction Class:</span>
+                <span style="color: #dc2626; font-weight: bold;">{{ violation.violation_type }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Speed Observed:</span>
+                <span><strong>{{ violation.speed_kmh }} km/h</strong> (Zone Limit: {{ violation.speed_limit_kmh }} km/h)</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">GPS Latitude:</span>
+                <span>{{ "%.6f"|format(violation.latitude) }} N</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">GPS Longitude:</span>
+                <span>{{ "%.6f"|format(violation.longitude) }} E</span>
+            </div>
+        </div>
+
+        <div>
+            <strong>Remarks / Specific Allegation:</strong>
+            <p style="margin: 4px 0 15px 0; color: #334155; font-size: 14px;">
+                {{ violation.remarks or "Automatic infraction detected by TRAZEN computer vision and GPS rule evaluation heuristics." }}
+            </p>
+        </div>
+
+        <div class="evidence-box">
+            <img src="/static/{{ violation.evidence_image }}" class="evidence-img" alt="Certified Violation Evidence">
+        </div>
+
+        <div class="hash-box">
+            <strong>DIGITAL CHAIN-OF-CUSTODY & CRYPTOGRAPHIC INTEGRITY:</strong><br>
+            <b>Algorithm:</b> SHA-256<br>
+            <b>Fingerprint:</b> {{ violation.evidence_hash_sha256 }}<br>
+            <b>Status:</b> <span style="color: #059669; font-weight: bold;">VERIFIED TAMPER-PROOF EVIDENCE</span>
+        </div>
+
+        <div style="border-top: 1px solid #cbd5e1; padding-top: 15px; font-size: 12px; color: #64748b; text-align: center;">
+            This electronic citation is computer-generated through the TRAZEN automated enforcement framework.<br>
+            Loyola ICAM College of Engineering & Technology (LICET), Chennai &bull; Academic Year 2026-2027
+        </div>
+
+        <button class="btn-print" onclick="window.print()">🖨️ Print Official Citation</button>
+    </div>
+
+</body>
+</html>
