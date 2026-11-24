@@ -78,12 +78,20 @@ def challan_page(violation_id):
 # ============================================================================
 
 @app.route("/api/v1/frames", methods=["POST"])
-def ingest_frame():
+@app.route("/api/v1/events/<event_id>/frames", methods=["POST"])
+@app.route("/upload", methods=["POST"])
+def ingest_frame(event_id=None):
     """
     Primary ingestion endpoint for ESP32-CAM and Simulator frames.
     Receives JPEG image payload with cryptographic headers and telemetry metadata.
     """
-    raw_data = request.get_data()
+    # Support both raw binary payload and multipart/form-data uploads
+    if request.files:
+        uploaded_file = next(iter(request.files.values()))
+        raw_data = uploaded_file.read()
+    else:
+        raw_data = request.get_data()
+
     if not raw_data:
         return jsonify({"status": "error", "message": "Empty payload"}), 400
 
