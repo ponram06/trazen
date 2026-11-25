@@ -13,11 +13,12 @@ import hmac
 import hashlib
 import urllib.request
 import urllib.error
+import os
 from datetime import datetime
 
 # Server Configuration
 SERVER_URL = "http://127.0.0.1:5000/api/v1/frames"
-SECRET_KEY = "trazen-secret-key-licet-2026"
+SECRET_KEY = os.environ.get("TRAZEN_SECRET_KEY")
 DEVICE_ID = "TRAZEN-NODE-01"
 
 # Base GPS Center: Loyola ICAM College of Engineering and Technology (LICET), Chennai
@@ -42,6 +43,8 @@ def generate_hmac_sha256(payload_bytes, key_str):
     return hmac.new(key_str.encode("utf-8"), payload_bytes, hashlib.sha256).hexdigest()
 
 def run_simulation(duration_seconds=60, interval=1.5):
+    if not SECRET_KEY:
+        raise RuntimeError("Set TRAZEN_SECRET_KEY before running the simulator.")
     print(f"\n========================================================")
     print(f"  TRAZEN EDGE SIMULATOR ACTIVE")
     print(f"  Simulating: {DEVICE_ID} transmitting to {SERVER_URL}")

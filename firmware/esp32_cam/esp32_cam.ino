@@ -5,22 +5,18 @@
 #include <ArduinoJson.h>
 #include <mbedtls/md.h>
 
+#if __has_include("config.local.h")
+#include "config.local.h"
+#else
+#include "config.h"
+#endif
 #include "gps_parser.h"
-
-// ---------------- WI-FI & SERVER SETTINGS ----------------
-const char* WIFI_SSID     = "vivo Y21 5G";
-const char* WIFI_PASSWORD = "jebinson(raj)";
-
-// Active Laptop IPv4 Server Endpoint
-const char* SERVER_URL    = "http://10.69.238.166:5000/api/v1/events";
-
-// Device Authentication
-const char* DEVICE_ID     = "ESP32_CAM_01";
-const char* DEVICE_SECRET = "trazen-secret-key-licet-2026";
 
 // GPS Module (NEO-6M on GPIO 13/14)
 HardwareSerial GPS_Serial(2);
 SimpleGPS gps;
+unsigned long lastCaptureMs = 0;
+uint32_t frameSequence = 0;
 
 // ---------------- CAMERA INITIALIZATION ----------------
 bool startCamera() {
@@ -77,7 +73,7 @@ bool startCamera() {
 }
 
 // ---------------- HMAC-SHA256 SIGNATURE ----------------
-String createSignature(const String& metadata, const uint8_t* imageData, size_t imageLength) {
+String createSignature(const uint8_t* imageData, size_t imageLength) {
     const mbedtls_md_info_t* mdInfo = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
     if (mdInfo == nullptr) return "";
 
@@ -87,14 +83,7 @@ String createSignature(const String& metadata, const uint8_t* imageData, size_t 
 
     int result = mbedtls_md_setup(&ctx, mdInfo, 1);
     if (result == 0) {
-        result = mbedtls_md_hmac_starts(&ctx, (const unsigned char*)DEVICE_SECRET, strlen(DEVICE_SECRET));
-    }
-    if (result == 0) {
-        result = mbedtls_md_hmac_update(&ctx, (const unsigned char*)metadata.c_str(), metadata.length());
-    }
-    const unsigned char newline = '\n';
-    if (result == 0) {
-        result = mbedtls_md_hmac_update(&ctx, &newline, 1);
+        result = mbedtls_md_hmac_starts(&ctx, (const unsigned char*)HMAC_SECRET_KEY, strlen(HMAC_SECRET_KEY));
     }
     if (result == 0) {
         result = mbedtls_md_hmac_update(&ctx, imageData, imageLength);
@@ -127,12 +116,13 @@ void uploadFrame(camera_fb_t* frame) {
         return;
     }
 
-    String eventId = "event_" + String(millis());
+    frameSequence++;
+    String frameId = String(frameSequence);
 
     // Prepare JSON Metadata
     StaticJsonDocument<256> doc;
     doc["device_id"] = DEVICE_ID;
-    doc["event_id"] = eventId;
+    doc["frame_id"] = frameId;
     doc["image_format"] = "jpeg";
     doc["width"] = frame->width;
     doc["height"] = frame->height;
@@ -144,10 +134,12 @@ void uploadFrame(camera_fb_t* frame) {
     String metadata;
     serializeJson(doc, metadata);
 
-    // Compute cryptographic signature
-    String signature = createSignature(metadata, frame->buf, frame->len);
+    // The server verifies this exact JPEG byte sequence.  Keep the signed
+    // payload simple so the ESP32 and Flask server cannot disagree.
+    String signature = createSignature(frame->buf, frame->len);
 
-    String endpoint = String(SERVER_URL) + "/" + eventId + "/frames";
+    String endpoint = "http://" + String(SERVER_HOST) + ":" + String(SERVER_PORT)
+                    + String(API_ENDPOINT_FRAME);
 
     WiFiClient client;
     HTTPClient http;
@@ -161,11 +153,15 @@ void uploadFrame(camera_fb_t* frame) {
 
     http.addHeader("Content-Type", "image/jpeg");
     http.addHeader("X-Device-ID", DEVICE_ID);
+    http.addHeader("X-Frame-ID", frameId);
     http.addHeader("X-Frame-Metadata", metadata);
     http.addHeader("X-Signature", signature);
     http.addHeader("X-GPS-Latitude", String(gps.data.latitude, 6));
     http.addHeader("X-GPS-Longitude", String(gps.data.longitude, 6));
     http.addHeader("X-GPS-Speed", String(gps.data.speedKmh, 2));
+    http.addHeader("X-GPS-Heading", String(gps.data.headingDeg, 1));
+    http.addHeader("X-GPS-Valid", gps.data.isValid ? "true" : "false");
+    http.addHeader("X-GPS-UTC", gps.data.timestamp);
 
     int responseCode = http.POST(frame->buf, frame->len);
     if (responseCode > 0) {
@@ -184,7 +180,7 @@ void setup() {
 
     Serial.println("\n========================================================");
     Serial.println("  TRAZEN: SMART TRAFFIC VIOLATION DETECTION");
-    Serial.println("  Target Server: " + String(SERVER_URL));
+    Serial.println("  Target Server: http://" + String(SERVER_HOST) + ":" + String(SERVER_PORT));
     Serial.println("========================================================");
 
     // Start GPS Serial
@@ -230,6 +226,12 @@ void loop() {
         return;
     }
 
+    if (millis() - lastCaptureMs < CAPTURE_INTERVAL_MS) {
+        delay(10);
+        return;
+    }
+    lastCaptureMs = millis();
+
     camera_fb_t* frame = esp_camera_fb_get();
     if (!frame) {
         Serial.println("Camera capture failed!");
@@ -241,5 +243,4 @@ void loop() {
     uploadFrame(frame);
     esp_camera_fb_return(frame);
 
-    delay(2000);
 }

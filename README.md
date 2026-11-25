@@ -8,7 +8,7 @@
 
 An intelligent, edge-assisted vehicular traffic enforcement and telemetry system developed as an engineering capstone project.
 
-* **Author:** Jebinson Raj. R
+* **Author:** ponram06
 * **Department:** Electronics and Communication Engineering (ECE)
 * **Institution:** Loyola ICAM College of Engineering and Technology (LICET), Chennai
 * **Academic Year:** 2026–2027

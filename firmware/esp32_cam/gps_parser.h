@@ -41,12 +41,14 @@ public:
 
     SimpleGPS() {
         data.isValid = false;
-        data.latitude = 13.0604f;   // Default fallback coordinates (Chennai, Loyola ICAM)
-        data.longitude = 80.2496f;
+        // Never invent a location. Until the module has a satellite fix the
+        // server receives gps_valid=false and does not plot an evidence point.
+        data.latitude = 0.0f;
+        data.longitude = 0.0f;
         data.speedKmh = 0.0f;
         data.headingDeg = 0.0f;
         data.satellites = 0;
-        strcpy(data.timestamp, "2026-11-24T00:00:00Z");
+        strcpy(data.timestamp, "GPS_UNAVAILABLE");
     }
 
     // Feed a character from GPS UART into the parser

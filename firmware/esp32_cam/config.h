@@ -3,15 +3,16 @@
 
 // ============================================================================
 // TRAZEN: ESP32-CAM & GPS CONFIGURATION FILE
-// Update these values to match your Wi-Fi network and laptop/server IP.
+// Copy this file to config.local.h, fill in your values, and keep that file
+// private. config.local.h is ignored by Git.
 // ============================================================================
 
 // --- Wi-Fi Settings ---
-const char* const WIFI_SSID     = "vivo Y21 5G";
-const char* const WIFI_PASSWORD = "jebinson(raj)";
+const char* const WIFI_SSID     = "YOUR_WIFI_NAME";
+const char* const WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
 // --- Server Settings ---
-const char* const SERVER_HOST   = "10.69.238.166";
+const char* const SERVER_HOST   = "192.168.1.100"; // Laptop's IPv4 address
 const int         SERVER_PORT   = 5000;
 
 // API Endpoints
@@ -20,7 +21,7 @@ const char* const API_ENDPOINT_TELEMETRY  = "/api/v1/telemetry";
 
 // --- Device Authentication & Cryptography ---
 const char* const DEVICE_ID       = "TRAZEN-NODE-01";
-const char* const HMAC_SECRET_KEY = "trazen-secret-key-licet-2026";
+const char* const HMAC_SECRET_KEY = "REPLACE_WITH_A_LONG_RANDOM_SECRET";
 
 // --- GPS Hardware Configuration (NEO-6M) ---
 // Connect NEO-6M TX pin -> ESP32-CAM GPIO 13 (ESP32 RX)

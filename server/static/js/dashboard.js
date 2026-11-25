@@ -36,7 +36,10 @@ async function pollLiveStatus() {
 
                 const hudElem = document.getElementById("hudInfo");
                 if (hudElem) {
-                    hudElem.textContent = `REC ${data.latest_frame.timestamp} | LAT ${data.latest_frame.lat.toFixed(4)} LON ${data.latest_frame.lon.toFixed(4)}`;
+                    const hasGps = Number.isFinite(data.latest_frame.lat) && Number.isFinite(data.latest_frame.lon);
+                    hudElem.textContent = hasGps
+                        ? `REC ${data.latest_frame.timestamp} | LAT ${data.latest_frame.lat.toFixed(4)} LON ${data.latest_frame.lon.toFixed(4)}`
+                        : `REC ${data.latest_frame.timestamp} | GPS ACQUIRING…`;
                 }
 
                 const speedElem = document.getElementById("hudSpeed");

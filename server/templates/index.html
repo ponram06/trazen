@@ -113,7 +113,7 @@
         <div style="display: flex; align-items: center; gap: 14px;">
             <div class="status-pill" style="display: flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; border: 1px solid rgba(16, 185, 129, 0.3);">
                 <div class="pulse-dot"></div>
-                <span id="nodeStatus">ESP32-CAM ONLINE (10.69.238.104)</span>
+                <span id="nodeStatus">Waiting for ESP32-CAM</span>
             </div>
             <a href="/violations" class="btn btn-outline" style="color: #9ca3af; text-decoration: none; font-size: 0.85rem; border: 1px solid #374151; padding: 6px 12px; border-radius: 6px;">Audit Log</a>
         </div>
@@ -131,7 +131,7 @@
             <div class="camera-screen">
                 <img id="liveStreamImg" src="/static/uploads/frames/{{ latest_frame.filename }}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'640\' height=\'480\'><rect width=\'100%\' height=\'100%\' fill=\'%23111827\'/><text x=\'50%\' y=\'50%\' fill=\'%239ca3af\' font-size=\'20\' text-anchor=\'middle\'>Waiting for next frame from ESP32-CAM...</text></svg>'" alt="Live Stream">
                 <div class="hud-banner">
-                    <span id="hudInfo">SYNC: {{ latest_frame.timestamp or "LIVE" }} &bull; LAT {{ "%.4f"|format(telemetry.latitude) }} &bull; LON {{ "%.4f"|format(telemetry.longitude) }}</span>
+                    <span id="hudInfo">SYNC: {{ latest_frame.timestamp or "LIVE" }} &bull; {% if telemetry.latitude is not none %}LAT {{ "%.4f"|format(telemetry.latitude) }} &bull; LON {{ "%.4f"|format(telemetry.longitude) }}{% else %}GPS ACQUIRING…{% endif %}</span>
                     <strong id="hudSpeed" style="color: #f43f5e;">{{ "%.1f"|format(telemetry.speed_kmh) }} KM/H</strong>
                 </div>
             </div>

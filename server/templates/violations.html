@@ -58,7 +58,7 @@
                                 <td>{{ v.timestamp }}</td>
                                 <td><span class="badge badge-rose">{{ v.violation_type }}</span></td>
                                 <td><strong>{{ v.speed_kmh }}</strong> / {{ v.speed_limit_kmh }} km/h</td>
-                                <td><small>{{ "%.4f"|format(v.latitude) }}, {{ "%.4f"|format(v.longitude) }}</small></td>
+                                <td><small>{% if v.latitude is not none %}{{ "%.4f"|format(v.latitude) }}, {{ "%.4f"|format(v.longitude) }}{% else %}GPS unavailable{% endif %}</small></td>
                                 <td>
                                     <span class="badge badge-emerald" title="{{ v.evidence_hash_sha256 }}">
                                         ✓ {{ v.evidence_hash_sha256[:8] }}...
